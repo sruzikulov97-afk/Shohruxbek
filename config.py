@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
 
     bot_token:       str
-    bot_username:    str   = "@ShohruxbeK_uchun_bot"
+    bot_username:    str   = "@Shohrux_test_bot"
     admin_ids:       str   = "8302385031"
     webapp_url:      str   = "https://shohrux-production.up.railway.app/webapp"
     admin_password:  str   = "admin123"
