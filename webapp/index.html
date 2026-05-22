@@ -282,7 +282,7 @@ try {
 
 // ── PRODUCTS ───────────────────────────────────────────────────────────────
 function loadProducts(){
-  const apiUrl = 'https://shohrux-production.up.railway.app/api/products';
+  const apiUrl = window.location.origin + '/api/products';
   document.getElementById('productGrid').innerHTML =
     '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">⏳ Yuklanmoqda...</div>';
   fetch(apiUrl)
