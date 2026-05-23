@@ -265,6 +265,34 @@ async def api_save_broadcast(request):
         return error_response(str(e))
 
 
+# ── Debug Info ────────────────────────────────────────────────────────────────
+async def api_debug(request):
+    try:
+        from aiogram import Bot
+        token = settings.bot_token
+        masked_token = f"{token[:8]}...{token[-5:]}" if token and len(token) > 15 else "None"
+        
+        bot_info = "None"
+        try:
+            temp_bot = Bot(token=token)
+            me = await temp_bot.get_me()
+            bot_info = f"@{me.username} (ID: {me.id})"
+            await temp_bot.session.close()
+        except Exception as e:
+            bot_info = f"Error: {str(e)}"
+
+        return json_response({
+            "bot_token_masked": masked_token,
+            "bot_info": bot_info,
+            "webapp_url": settings.webapp_url,
+            "admin_ids": settings.admin_ids,
+            "database_url": settings.database_url,
+            "env_port": os.environ.get("PORT", "None")
+        })
+    except Exception as e:
+        return error_response(str(e))
+
+
 # ── Static files ───────────────────────────────────────────────────────────────
 
 async def serve_webapp(request):
@@ -293,6 +321,7 @@ def create_app():
 
     # Stats
     app.router.add_get("/api/stats", api_stats)
+    app.router.add_get("/api/debug", api_debug)
 
     # Products
     app.router.add_get("/api/products", api_get_products)
