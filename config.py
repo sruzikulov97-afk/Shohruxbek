@@ -19,6 +19,18 @@ class Settings(BaseSettings):
     def admin_list(self) -> List[int]:
         return [int(i.strip()) for i in self.admin_ids.split(",") if i.strip().isdigit()]
 
+    from pydantic import model_validator
+
+    @model_validator(mode='after')
+    def clean_webapp_url(self) -> 'Settings':
+        url = self.webapp_url.strip()
+        if not url.startswith("http://") and not url.startswith("https://"):
+            url = "https://" + url
+        if not url.endswith("/webapp") and not url.endswith("/webapp/"):
+            url = url.rstrip("/") + "/webapp"
+        self.webapp_url = url
+        return self
+
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
