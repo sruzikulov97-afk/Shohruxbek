@@ -22,13 +22,25 @@ class Settings(BaseSettings):
     from pydantic import model_validator
 
     @model_validator(mode='after')
-    def clean_webapp_url(self) -> 'Settings':
+    def clean_settings(self) -> 'Settings':
+        # Clean webapp_url
         url = self.webapp_url.strip()
         if not url.startswith("http://") and not url.startswith("https://"):
             url = "https://" + url
         if not url.endswith("/webapp") and not url.endswith("/webapp/"):
             url = url.rstrip("/") + "/webapp"
         self.webapp_url = url
+
+        # Clean database_url for SQLAlchemy Async engine
+        db_url = self.database_url.strip()
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif db_url.startswith("postgresql://"):
+            db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif db_url.startswith("sqlite://") and not db_url.startswith("sqlite+aiosqlite://"):
+            db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+        self.database_url = db_url
+
         return self
 
 @lru_cache()
