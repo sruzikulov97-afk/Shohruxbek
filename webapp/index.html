@@ -123,16 +123,16 @@ textarea{resize:none;height:70px}
   <!-- STEP 1: PRODUCTS -->
   <div id="step1" class="anim">
     <div class="card">
-      <div class="card-title">Mahsulotlar</div>
+      <div class="card-title" id="t-products">Mahsulotlar</div>
       <div class="pgrid" id="productGrid">
-        <div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">⏳ Yuklanmoqda...</div>
+        <div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px" id="t-loading">⏳ Yuklanmoqda...</div>
       </div>
     </div>
     <div class="card" id="cartPreview" style="display:none">
-      <div class="card-title">🛒 Savat</div>
+      <div class="card-title" id="t-cart">🛒 Savat</div>
       <div id="cartPreviewItems"></div>
       <div class="total-row big">
-        <span class="total-label">Jami:</span>
+        <span class="total-label" id="t-total">Jami:</span>
         <span class="total-val big" id="cartTotal">0 so'm</span>
       </div>
     </div>
@@ -151,21 +151,21 @@ textarea{resize:none;height:70px}
     </div>
     <div id="infoFormBlock">
       <div class="card">
-        <div class="card-title">👤 Ma'lumotlaringiz</div>
+        <div class="card-title" id="t-cust-info">👤 Ma'lumotlaringiz</div>
         <div class="form-group">
-          <label>Ism Familiya *</label>
+          <label id="t-fullname">Ism Familiya *</label>
           <input id="fName" type="text" placeholder="Ali Valiyev"/>
         </div>
         <div class="form-group">
-          <label>Telefon raqam *</label>
+          <label id="t-phone">Telefon raqam *</label>
           <input id="fPhone" type="tel" placeholder="+998 90 123 45 67"/>
         </div>
         <div class="form-group">
-          <label>Yetkazib berish manzili *</label>
+          <label id="t-address">Yetkazib berish manzili *</label>
           <textarea id="fAddr" placeholder="Shahar, ko'cha, uy raqami..."></textarea>
         </div>
         <div class="form-group">
-          <label>Qo'shimcha izoh (ixtiyoriy)</label>
+          <label id="t-note">Qo'shimcha izoh (ixtiyoriy)</label>
           <input id="fNote" type="text" placeholder="Eshik kodi, qavat..."/>
         </div>
       </div>
@@ -175,7 +175,7 @@ textarea{resize:none;height:70px}
   <!-- STEP 3: PAYMENT -->
   <div id="step3" style="display:none" class="anim">
     <div class="card">
-      <div class="card-title">💳 To'lov usulini tanlang</div>
+      <div class="card-title" id="t-select-payment">💳 To'lov usulini tanlang</div>
       <div class="pay-grid">
         <div class="pay-card" id="pay-click" onclick="selPay('click')">
           <div class="pay-logo">⚡</div>
@@ -199,10 +199,10 @@ textarea{resize:none;height:70px}
       <div class="pay-warning" id="payWarning">👆 To'lov usulini tanlang</div>
     </div>
     <div class="card">
-      <div class="card-title">📋 Buyurtma xulosasi</div>
+      <div class="card-title" id="t-summary">📋 Buyurtma xulosasi</div>
       <div id="summaryItems"></div>
       <div class="total-row big">
-        <span class="total-label">💰 Jami to'lov:</span>
+        <span class="total-label" id="t-total-pay">💰 Jami to'lov:</span>
         <span class="total-val big" id="summaryTotal">0 so'm</span>
       </div>
     </div>
@@ -211,19 +211,19 @@ textarea{resize:none;height:70px}
   <!-- STEP 4: CONFIRM -->
   <div id="step4" style="display:none" class="anim">
     <div class="card">
-      <div class="card-title">🧾 Buyurtma tarkibi</div>
+      <div class="card-title" id="t-confirm-items">🧾 Buyurtma tarkibi</div>
       <div id="confirmItems"></div>
       <div class="total-row big">
-        <span class="total-label">💰 Jami:</span>
+        <span class="total-label" id="t-total-confirm">💰 Jami:</span>
         <span class="total-val big" id="confirmTotal">0</span>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">👤 Yetkazib berish</div>
+      <div class="card-title" id="t-shipping">👤 Yetkazib berish</div>
       <div id="confirmInfo"></div>
     </div>
     <div class="card">
-      <div class="card-title">💳 To'lov usuli</div>
+      <div class="card-title" id="t-payment-method">💳 To'lov usuli</div>
       <div id="confirmPay" style="font-size:14px;font-weight:700;padding:4px 0"></div>
     </div>
   </div>
@@ -248,26 +248,204 @@ textarea{resize:none;height:70px}
 const tg = window.Telegram.WebApp;
 tg.expand(); tg.ready();
 
-if(tg.colorScheme === 'light'){
-  document.documentElement.style.setProperty('--bg','#f2f4fb');
-  document.documentElement.style.setProperty('--s1','#ffffff');
-  document.documentElement.style.setProperty('--s2','#eaecf7');
-  document.documentElement.style.setProperty('--b','#d5d8ed');
-  document.documentElement.style.setProperty('--text','#1a1d2e');
-  document.documentElement.style.setProperty('--muted','#717593');
+// ── LOCALIZATION SYSTEM ───────────────────────────────────────────────────
+const LANGS = {
+  uz: {
+    title: "Buyurtma",
+    loading: "⏳ Yuklanmoqda...",
+    no_products: "📭 Mahsulotlar yo'q",
+    cart: "🛒 Savat",
+    total: "Jami:",
+    som: "so'm",
+    cust_info: "👤 Ma'lumotlaringiz",
+    fullname: "Ism Familiya *",
+    fullname_placeholder: "Ali Valiyev",
+    phone: "Telefon raqam *",
+    phone_placeholder: "+998 90 123 45 67",
+    address: "Yetkazib berish manzili *",
+    address_placeholder: "Shahar, ko'cha, uy raqami...",
+    note: "Qo'shimcha izoh (ixtiyoriy)",
+    note_placeholder: "Eshik kodi, qavat...",
+    saved_info: "✅ Ma'lumotlar saqlangan",
+    edit: "✏️ O'zgartirish",
+    select_payment: "💳 To'lov usulini tanlang",
+    pay_click_desc: "Karta orqali online",
+    pay_click_badge: "Xavfsiz",
+    pay_payme_desc: "Karta orqali online",
+    pay_payme_badge: "Xavfsiz",
+    pay_cash_desc: "Yetkazib berganda",
+    pay_cash_badge: "Qulay",
+    select_payment_prompt: "👆 To'lov usulini tanlang",
+    step1_title: "1/4 — Mahsulot tanlang",
+    step2_title: "2/4 — Ma'lumotlar",
+    step3_title: "3/4 — To'lov usuli",
+    step4_title: "4/4 — Tasdiqlash",
+    step1_sub: "Mahsulotlarni savatga soling",
+    step2_sub: "Yetkazib berish ma'lumotlari",
+    step3_sub: "To'lov usulini tanlang",
+    step4_sub: "Buyurtmani tasdiqlang",
+    next: "Davom etish →",
+    submit: "✅ Buyurtma berish",
+    submitting: "⏳ Yuborilmoqda...",
+    cart_empty: "Savat bo'sh! Mahsulot tanlang.",
+    err_fullname: "Ism Familiyangizni kiriting!",
+    err_phone: "Telefon raqamingizni kiriting!",
+    err_address: "Manzilingizni kiriting!",
+    success_title: "Buyurtma qabul qilindi!",
+    success_cash_text: "🧾 Raqam: <b>#{orderNum}</b><br><br>💵 To'lov: <b>Yetkazib berganda naqd</b><br><br>📞 Tez orada bog'lanamiz!<br>Rahmat! 🙏",
+    success_online_text: "🧾 Raqam: <b>#{orderNum}</b><br>💰 Jami: <b>{total} so'm</b><br><br>{payment_icon} {payment_label} orqali to'lov uchun tugmani bosing:",
+    success_online_no_url: "🧾 Raqam: <b>#{orderNum}</b><br>💰 Jami: <b>{total} so'm</b><br><br>⚠️ To'lov tizimi tez orada ulanadi.<br>Hozircha kuryer bilan to'lashingiz mumkin.",
+    pay_button: "{payment_icon} {payment_label} orqali to'lash",
+    click_warn: "⚡ Click orqali to'lov — karta ma'lumotlaringiz bizga ko'rinmaydi.",
+    payme_warn: "💜 Payme orqali to'lov — karta ma'lumotlaringiz bizga ko'rinmaydi.",
+    cash_warn: "💵 Kuryer kelganda naqd pul to'laysiz. Tez orada bog'lanamiz!",
+    ta: "ta",
+    confirm_title: "📋 Buyurtma xulosasi",
+    confirm_items: "🧾 Buyurtma tarkibi",
+    shipping: "👤 Yetkazib berish",
+    payment_method: "💳 To'lov usuli",
+    total_pay: "💰 Jami to'lov:",
+  },
+  zh: {
+    title: "订购",
+    loading: "⏳ 正在加载...",
+    no_products: "📭 暂无商品",
+    cart: "🛒 购物车",
+    total: "总计:",
+    som: "苏姆",
+    cust_info: "👤 您的信息",
+    fullname: "姓名 *",
+    fullname_placeholder: "例如：张三",
+    phone: "电话号码 *",
+    phone_placeholder: "+998 90 123 45 67",
+    address: "送货地址 *",
+    address_placeholder: "城市、街道、门牌号...",
+    note: "备注 (选填)",
+    note_placeholder: "门禁密码、楼层...",
+    saved_info: "✅ 信息已保存",
+    edit: "✏️ 修改",
+    select_payment: "💳 选择支付方式",
+    pay_click_desc: "在线银行卡支付",
+    pay_click_badge: "安全",
+    pay_payme_desc: "在线银行卡支付",
+    pay_payme_badge: "安全",
+    pay_cash_desc: "货到付款",
+    pay_cash_badge: "便利",
+    select_payment_prompt: "👆 请选择支付方式",
+    step1_title: "1/4 — 选择商品",
+    step2_title: "2/4 — 填写信息",
+    step3_title: "3/4 — 支付方式",
+    step4_title: "4/4 — 确认订单",
+    step1_sub: "将商品加入购物车",
+    step2_sub: "填写送货信息",
+    step3_sub: "选择支付方式",
+    step4_sub: "确认您的订单",
+    next: "继续 →",
+    submit: "✅ 提交订单",
+    submitting: "⏳ 正在提交...",
+    cart_empty: "购物车为空！请选择商品。",
+    err_fullname: "请输入您的姓名！",
+    err_phone: "请输入您的电话号码！",
+    err_address: "请输入您的送货地址！",
+    success_title: "订单已收到！",
+    success_cash_text: "🧾 订单号: <b>#{orderNum}</b><br><br>💵 支付方式: <b>货到付款 (现金)</b><br><br>📞 我们会尽快与您联系！<br>谢谢！ 🙏",
+    success_online_text: "🧾 订单号: <b>#{orderNum}</b><br>💰 总额: <b>{total} 苏姆</b><br><br>点击下方按钮通过 {payment_icon} {payment_label} 支付：",
+    success_online_no_url: "🧾 订单号: <b>#{orderNum}</b><br>💰 总额: <b>{total} 苏姆</b><br><br>⚠️ 在线支付系统即将上线。<br>目前支持货到付款。",
+    pay_button: "通过 {payment_icon} {payment_label} 支付",
+    click_warn: "⚡ Click 支付 — 您的银行卡信息对我们不可见。",
+    payme_warn: "💜 Payme 支付 — 您的银行卡信息对我们不可见。",
+    cash_warn: "💵 货到付款 — 快递员送达时以现金支付。我们会尽快与您联系！",
+    ta: "件",
+    confirm_title: "📋 确认订单",
+    confirm_items: "🧾 确认商品",
+    shipping: "👤 配送信息",
+    payment_method: "💳 支付方式",
+    total_pay: "💰 实付金额:",
+  }
+};
+
+const urlParams = new URLSearchParams(window.location.search);
+let lang = urlParams.get('lang') || 'uz';
+if (lang !== 'zh' && lang !== 'uz') {
+  lang = 'uz';
 }
 
-const user = tg.initDataUnsafe?.user;
-if(user){
-  const fn = [user.first_name, user.last_name].filter(Boolean).join(' ');
-  document.getElementById('hName').textContent = fn || 'Buyurtma';
+function t(key, reps = {}) {
+  let text = LANGS[lang]?.[key] || LANGS['uz']?.[key] || key;
+  for (const [k, v] of Object.entries(reps)) {
+    text = text.replace('{' + k + '}', v);
+  }
+  return text;
 }
 
-// ── CONFIG (merchant bo'lganda shu URLlarni o'zgartiring) ──────────────────
-// TODO: Merchant akkaunt olgandan keyin quyidagilarni to'ldiring:
+function applyLocalization() {
+  document.title = t('title');
+  const hName = document.getElementById('hName');
+  if (hName && hName.textContent === 'Buyurtma') {
+    hName.textContent = t('title');
+  }
+
+  const ids = {
+    't-products': 'products',
+    't-cart': 'cart',
+    't-total': 'total',
+    't-cust-info': 'cust_info',
+    't-fullname': 'fullname',
+    't-phone': 'phone',
+    't-address': 'address',
+    't-note': 'note',
+    't-select-payment': 'select_payment',
+    'payWarning': 'select_payment_prompt',
+    't-summary': 'confirm_title',
+    't-total-pay': 'total_pay',
+    't-confirm-items': 'confirm_items',
+    't-total-confirm': 'total',
+    't-shipping': 'shipping',
+    't-payment-method': 'payment_method',
+  };
+
+  for (const [id, key] of Object.entries(ids)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(key);
+  }
+
+  // Update placeholders
+  const fName = document.getElementById('fName');
+  if (fName) fName.placeholder = t('fullname_placeholder');
+  const fPhone = document.getElementById('fPhone');
+  if (fPhone) fPhone.placeholder = t('phone_placeholder');
+  const fAddr = document.getElementById('fAddr');
+  if (fAddr) fAddr.placeholder = t('address_placeholder');
+  const fNote = document.getElementById('fNote');
+  if (fNote) fNote.placeholder = t('note_placeholder');
+
+  // Saved info block labels
+  const savedInfoTitle = document.querySelector('#savedInfoBlock .si-title');
+  if (savedInfoTitle) savedInfoTitle.textContent = t('saved_info');
+  const savedInfoEdit = document.querySelector('#savedInfoBlock .si-edit');
+  if (savedInfoEdit) savedInfoEdit.textContent = t('edit');
+
+  // Pay cards
+  const payClickDesc = document.querySelector('#pay-click .pay-desc');
+  if (payClickDesc) payClickDesc.textContent = t('pay_click_desc');
+  const payClickBadge = document.querySelector('#pay-click .pay-badge');
+  if (payClickBadge) payClickBadge.textContent = t('pay_click_badge');
+
+  const payPaymeDesc = document.querySelector('#pay-payme .pay-desc');
+  if (payPaymeDesc) payPaymeDesc.textContent = t('pay_payme_desc');
+  const payPaymeBadge = document.querySelector('#pay-payme .pay-badge');
+  if (payPaymeBadge) payPaymeBadge.textContent = t('pay_payme_badge');
+
+  const payCashDesc = document.querySelector('#pay-cash .pay-desc');
+  if (payCashDesc) payCashDesc.textContent = t('pay_cash_desc');
+  const payCashBadge = document.querySelector('#pay-cash .pay-badge');
+  if (payCashBadge) payCashBadge.textContent = t('pay_cash_badge');
+}
+
+// ── CONFIG ─────────────────────────────────────────────────────────────────
 const PAYMENT_URLS = {
-  click: '', // 'https://my.click.uz/services/pay?service_id=XXXX&merchant_id=XXXX&amount=AMOUNT'
-  payme: '', // 'https://checkout.paycom.uz/XXXX'
+  click: '',
+  payme: '',
 };
 
 // ── STATE ──────────────────────────────────────────────────────────────────
@@ -280,18 +458,24 @@ try {
   if(s) customerInfo = JSON.parse(s);
 } catch(e){}
 
+const PAY_INFO = {
+  click: { icon:'⚡', label:'Click', desc:'', warn:'' },
+  payme: { icon:'💜', label:'Payme', desc:'', warn:'' },
+  cash:  { icon:'💵', label:'Naqd',  desc:'', warn:'' },
+};
+
 // ── PRODUCTS ───────────────────────────────────────────────────────────────
 function loadProducts(){
   const apiUrl = window.location.origin + '/api/products';
   document.getElementById('productGrid').innerHTML =
-    '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">⏳ Yuklanmoqda...</div>';
+    `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">${t('loading')}</div>`;
   fetch(apiUrl)
     .then(r => r.json())
     .then(data => {
       if(data && data.length > 0){ renderProducts(data); }
       else {
         document.getElementById('productGrid').innerHTML =
-          '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">📭 Mahsulotlar yo\'q</div>';
+          `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">📭 ${t('no_products')}</div>`;
       }
     })
     .catch(e => {
@@ -304,14 +488,14 @@ function renderProducts(list){
   products = list;
   const grid = document.getElementById('productGrid');
   if(!list.length){
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">📭 Mahsulotlar yo\'q</div>';
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">📭 ${t('no_products')}</div>`;
     return;
   }
   grid.innerHTML = list.map(p=>`
     <div class="pc" id="pc${p.id}">
       ${p.photo_url ? `<img class="pc-img" src="${p.photo_url}" onerror="this.style.display='none'"/>` : `<span class="pc-em">📦</span>`}
       <div class="pc-name">${p.name}</div>
-      <div class="pc-price">${Number(p.price).toLocaleString('uz-UZ')} so'm</div>
+      <div class="pc-price">${Number(p.price).toLocaleString('uz-UZ')} ${t('som')}</div>
       <div class="pc-cat">${p.category||''}</div>
       <span class="pc-cnt" id="cnt${p.id}">0</span>
       <button class="pc-add" onclick="addCart(${p.id})">+</button>
@@ -358,9 +542,9 @@ function updateCartUI(){
         </div>
         <div class="ci-price">${(i.price*i.qty).toLocaleString('uz-UZ')}</div>
       </div>`).join('');
-    document.getElementById('cartTotal').textContent = totalSum().toLocaleString('uz-UZ')+" so'm";
+    document.getElementById('cartTotal').textContent = totalSum().toLocaleString('uz-UZ')+" " + t('som');
     document.getElementById('mainBtn').disabled=false;
-    btnCnt.textContent=items.length+' ta'; btnCnt.style.display='inline';
+    btnCnt.textContent=items.length+' ' + t('ta'); btnCnt.style.display='inline';
   } else {
     preview.style.display='none';
     document.getElementById('mainBtn').disabled=true;
@@ -375,26 +559,17 @@ function totalSum(){
   return cartItems().reduce((s,i)=>s+i.price*i.qty,0);
 }
 
-// ── PAYMENT ────────────────────────────────────────────────────────────────
-const PAY_INFO = {
-  click: { icon:'⚡', label:'Click',  desc:'Karta orqali to\'lov (xavfsiz)',   warn:'⚡ Click orqali to\'lov — karta ma\'lumotlaringiz bizga ko\'rinmaydi.' },
-  payme: { icon:'💜', label:'Payme',  desc:'Karta orqali to\'lov (xavfsiz)',   warn:'💜 Payme orqali to\'lov — karta ma\'lumotlaringiz bizga ko\'rinmaydi.' },
-  cash:  { icon:'💵', label:'Naqd',   desc:'Yetkazib berganda to\'laysiz',     warn:'💵 Kuryer kelganda naqd pul to\'laysiz. Tez orada bog\'lanamiz!' },
-};
-
 function selPay(method){
   selectedPay = method;
   ['click','payme','cash'].forEach(m=>{
     document.getElementById('pay-'+m).classList.toggle('sel', m===method);
   });
-  document.getElementById('payWarning').textContent = PAY_INFO[method].warn;
+  const warn = method === 'click' ? t('click_warn') : method === 'payme' ? t('payme_warn') : t('cash_warn');
+  document.getElementById('payWarning').textContent = warn;
   tg.HapticFeedback?.selectionChanged();
 }
 
 // ── STEPS ──────────────────────────────────────────────────────────────────
-const STEP_TITLES = ['','1/4 — Mahsulot tanlang','2/4 — Ma\'lumotlar','3/4 — To\'lov usuli','4/4 — Tasdiqlash'];
-const STEP_SUBS   = ['','Mahsulotlarni savatga soling','Yetkazib berish ma\'lumotlari','To\'lov usulini tanlang','Buyurtmani tasdiqlang'];
-
 function goStep(n){
   document.getElementById('step'+currentStep).style.display='none';
   currentStep=n;
@@ -403,9 +578,10 @@ function goStep(n){
   for(let i=1;i<=4;i++){
     document.getElementById('sb'+i).className='step-bar '+(i<n?'done':i===n?'active':'');
   }
-  document.getElementById('stepLbl').textContent=STEP_TITLES[n];
-  document.getElementById('hSub').textContent=STEP_SUBS[n];
-  const txts={1:'Davom etish →',2:'Davom etish →',3:'Davom etish →',4:'✅ Buyurtma berish'};
+  document.getElementById('stepLbl').textContent = t('step' + n + '_title');
+  document.getElementById('hSub').textContent = t('step' + n + '_sub');
+  
+  const txts={1: t('next'), 2: t('next'), 3: t('next'), 4: t('submit')};
   document.getElementById('btnText').textContent=txts[n];
   document.getElementById('btnCount').style.display='none';
   document.getElementById('mainBtn').className='main-btn'+(n===4?' grn':'');
@@ -414,7 +590,7 @@ function goStep(n){
 
 function nextStep(){
   if(currentStep===1){
-    if(!cartItems().length){ tg.showAlert('Savat bo\'sh! Mahsulot tanlang.'); return; }
+    if(!cartItems().length){ tg.showAlert(t('cart_empty')); return; }
     if(customerInfo){
       document.getElementById('si-name').textContent=customerInfo.name;
       document.getElementById('si-phone').textContent=customerInfo.phone;
@@ -432,9 +608,9 @@ function nextStep(){
       const name=document.getElementById('fName').value.trim();
       const phone=document.getElementById('fPhone').value.trim();
       const addr=document.getElementById('fAddr').value.trim();
-      if(!name){ tg.showAlert('Ism Familiyangizni kiriting!'); return; }
-      if(!phone){ tg.showAlert('Telefon raqamingizni kiriting!'); return; }
-      if(!addr){ tg.showAlert('Manzilingizni kiriting!'); return; }
+      if(!name){ tg.showAlert(t('err_fullname')); return; }
+      if(!phone){ tg.showAlert(t('err_phone')); return; }
+      if(!addr){ tg.showAlert(t('err_address')); return; }
       customerInfo={name,phone,address:addr,note:document.getElementById('fNote').value.trim()};
       try{ localStorage.setItem('cInfo',JSON.stringify(customerInfo)); }catch(e){}
     }
@@ -442,7 +618,7 @@ function nextStep(){
     goStep(3);
 
   } else if(currentStep===3){
-    if(!selectedPay){ tg.showAlert('To\'lov usulini tanlang!'); return; }
+    if(!selectedPay){ tg.showAlert(t('select_payment_prompt')); return; }
     renderConfirm();
     goStep(4);
 
@@ -461,18 +637,18 @@ function editInfo(){
 function renderSummary(){
   const items=cartItems();
   document.getElementById('summaryItems').innerHTML=items.map(i=>
-    `<div class="sum-row"><span>${i.name} × ${i.qty}</span><b>${(i.price*i.qty).toLocaleString('uz-UZ')} so'm</b></div>`
+    `<div class="sum-row"><span>${i.name} × ${i.qty}</span><b>${(i.price*i.qty).toLocaleString('uz-UZ')} ${t('som')}</b></div>`
   ).join('');
-  document.getElementById('summaryTotal').textContent=totalSum().toLocaleString('uz-UZ')+" so'm";
+  document.getElementById('summaryTotal').textContent=totalSum().toLocaleString('uz-UZ')+" " + t('som');
 }
 
 function renderConfirm(){
   const items=cartItems();
   const total=totalSum();
   document.getElementById('confirmItems').innerHTML=items.map(i=>
-    `<div class="sum-row"><span>${i.name} × ${i.qty}</span><b>${(i.price*i.qty).toLocaleString('uz-UZ')} so'm</b></div>`
+    `<div class="sum-row"><span>${i.name} × ${i.qty}</span><b>${(i.price*i.qty).toLocaleString('uz-UZ')} ${t('som')}</b></div>`
   ).join('');
-  document.getElementById('confirmTotal').textContent=total.toLocaleString('uz-UZ')+" so'm";
+  document.getElementById('confirmTotal').textContent=total.toLocaleString('uz-UZ')+" " + t('som');
   document.getElementById('confirmInfo').innerHTML=`
     <div class="sum-row"><span>👤</span><b>${customerInfo.name}</b></div>
     <div class="sum-row"><span>📞</span><b>${customerInfo.phone}</b></div>
@@ -487,7 +663,7 @@ function renderConfirm(){
 function submitOrder(){
   const btn=document.getElementById('mainBtn');
   btn.disabled=true;
-  document.getElementById('btnText').textContent='⏳ Yuborilmoqda...';
+  document.getElementById('btnText').textContent=t('submitting');
 
   const items=cartItems();
   const total=totalSum();
@@ -505,34 +681,30 @@ function submitOrder(){
 
   tg.sendData(JSON.stringify(data));
 
-  // Success screen
   document.getElementById('app').style.display='none';
   document.getElementById('mainBtn').style.display='none';
   const ss=document.getElementById('successScreen');
   ss.style.display='flex';
 
   if(selectedPay==='cash'){
-    document.getElementById('sTitle').textContent='Buyurtma qabul qilindi!';
-    document.getElementById('sText').innerHTML=
-      `🧾 Raqam: <b>#${orderNum}</b><br><br>` +
-      `💵 To'lov: <b>Yetkazib berganda naqd</b><br><br>` +
-      `📞 Tez orada bog'lanamiz!<br>Rahmat! 🙏`;
+    document.getElementById('sTitle').textContent=t('success_title');
+    document.getElementById('sText').innerHTML=t('success_cash_text', {orderNum});
     document.getElementById('sPayBtn').style.display='none';
   } else {
-    // Click yoki Payme
     const url=PAYMENT_URLS[selectedPay];
     const pi=PAY_INFO[selectedPay];
-    document.getElementById('sTitle').textContent='Buyurtma qabul qilindi!';
-    document.getElementById('sText').innerHTML=
-      `🧾 Raqam: <b>#${orderNum}</b><br>` +
-      `💰 Jami: <b>${total.toLocaleString('uz-UZ')} so'm</b><br><br>` +
-      (url ? `${pi.icon} ${pi.label} orqali to'lov uchun tugmani bosing:` : `⚠️ To'lov tizimi tez orada ulanadi.<br>Hozircha kuryer bilan to'lashingiz mumkin.`);
-
+    document.getElementById('sTitle').textContent=t('success_title');
     if(url){
+      document.getElementById('sText').innerHTML=t('success_online_text', {
+        orderNum,
+        total: total.toLocaleString('uz-UZ'),
+        payment_icon: pi.icon,
+        payment_label: pi.label
+      });
       paymentUrl=url.replace('AMOUNT',total);
       const payBtn=document.getElementById('sPayBtn');
       payBtn.style.display='block';
-      payBtn.textContent=`${pi.icon} ${pi.label} orqali to'lash`;
+      payBtn.textContent=t('pay_button', {payment_icon: pi.icon, payment_label: pi.label});
       payBtn.style.background=selectedPay==='click'
         ? 'linear-gradient(135deg,#00BFFF,#007EC6)'
         : 'linear-gradient(135deg,#7C3AED,#5B21B6)';

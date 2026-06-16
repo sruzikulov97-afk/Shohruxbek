@@ -21,6 +21,7 @@ class User(Base):
     first_name    = Column(String(128), nullable=True)
     last_name     = Column(String(128), nullable=True)
     language_code = Column(String(10), nullable=True)
+    role          = Column(String(32), default="user")
     is_bot        = Column(Boolean, default=False)
     is_banned     = Column(Boolean, default=False)
     created_at    = Column(DateTime, default=datetime.utcnow)
@@ -38,6 +39,7 @@ class Product(Base):
     price       = Column(Float, nullable=False, default=0)
     photo_url   = Column(String(512), nullable=True)
     category    = Column(String(64), nullable=True, default="Asosiy")
+    stock       = Column(Integer, default=0)
     is_active   = Column(Boolean, default=True)
     created_at  = Column(DateTime, default=datetime.utcnow)
     updated_at  = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -63,6 +65,15 @@ class BroadcastLog(Base):
     total_failed = Column(Integer, default=0)
     created_at   = Column(DateTime, default=datetime.utcnow)
 
+class StockTransaction(Base):
+    __tablename__ = "stock_transactions"
+    id           = Column(Integer, primary_key=True, autoincrement=True)
+    product_id   = Column(Integer, nullable=False, index=True)
+    quantity     = Column(Integer, nullable=False)
+    type         = Column(String(32), default="addition") # "addition" or "initial"
+    created_at   = Column(DateTime, default=datetime.utcnow)
+    added_by     = Column(BigInteger, nullable=True)
+
 async def init_db():
     import os, sqlalchemy as sa
     os.makedirs("data", exist_ok=True)
@@ -75,6 +86,8 @@ async def init_db():
             "ALTER TABLE orders ADD COLUMN quantity INTEGER DEFAULT 1",
             "ALTER TABLE orders ADD COLUMN product_id INTEGER",
             "ALTER TABLE orders ADD COLUMN note TEXT",
+            "ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN role VARCHAR(32) DEFAULT 'user'",
         ]:
             try:
                 await conn.execute(sa.text(sql))

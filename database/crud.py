@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import select, update, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.models import User, Product, Order, BroadcastLog
+from database.models import User, Product, Order, BroadcastLog, StockTransaction
 
 
 # ── User ──────────────────────────────────────────────────────────────────────
@@ -61,10 +61,30 @@ async def get_product(session: AsyncSession, pid: int) -> Optional[Product]:
 
 async def create_product(session: AsyncSession, name: str, price: float,
                          photo_url: str = None, category: str = "Asosiy",
-                         description: str = "") -> Product:
-    p = Product(name=name, price=price, photo_url=photo_url, category=category, description=description)
+                         description: str = "", stock: int = 0, added_by: int = None) -> Product:
+    p = Product(name=name, price=price, photo_url=photo_url, category=category, description=description, stock=stock)
     session.add(p); await session.commit(); await session.refresh(p)
+    if stock > 0:
+        tx = StockTransaction(product_id=p.id, quantity=stock, type="initial", added_by=added_by)
+        session.add(tx); await session.commit()
     return p
+
+async def add_stock(session: AsyncSession, pid: int, qty: int, added_by: int) -> bool:
+    p = await get_product(session, pid)
+    if not p: return False
+    p.stock = (p.stock or 0) + qty
+    tx = StockTransaction(product_id=pid, quantity=qty, type="addition", added_by=added_by)
+    session.add(tx)
+    await session.commit()
+    return True
+
+async def update_user_lang(session: AsyncSession, telegram_id: int, lang: str) -> bool:
+    r = await session.execute(select(User).where(User.telegram_id == telegram_id))
+    user = r.scalar_one_or_none()
+    if not user: return False
+    user.language_code = lang
+    await session.commit()
+    return True
 
 async def update_product(session: AsyncSession, pid: int, **kwargs) -> bool:
     kwargs["updated_at"] = datetime.utcnow()
@@ -100,8 +120,18 @@ async def get_order_count(session: AsyncSession) -> int:
     return (await session.execute(select(func.count(Order.id)))).scalar_one()
 
 async def update_order_status(session: AsyncSession, oid: int, status: str) -> bool:
-    r = await session.execute(update(Order).where(Order.id == oid).values(status=status))
-    await session.commit(); return r.rowcount > 0
+    r = await session.execute(select(Order).where(Order.id == oid))
+    order = r.scalar_one_or_none()
+    if not order: return False
+    old_status = order.status
+    order.status = status
+    if status == "confirmed" and old_status != "confirmed":
+        if order.product_id:
+            p = await get_product(session, order.product_id)
+            if p:
+                p.stock = max(0, (p.stock or 0) - (order.quantity or 1))
+    await session.commit()
+    return True
 
 async def get_total_revenue(session: AsyncSession) -> float:
     r = await session.execute(

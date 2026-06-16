@@ -1,0 +1,117 @@
+"""
+utils/localization.py
+Localization strings for Uzbek (uz) and Chinese (zh).
+"""
+
+TEXTS = {
+    "uz": {
+        "greeting_new": "👋 Xush kelibsiz",
+        "greeting_returning": "👋 Qaytib keldingiz",
+        "order_button": "🌐 Buyurtma berish",
+        "order_btn_prompt": "🛒 Buyurtma berish uchun tugmani bosing 👇",
+        "select_lang_prompt": "🇺🇿 Iltimos, tilni tanlang:\n🇨🇳 请选择语言:",
+        "lang_changed": "Til muvaffaqiyatli o'zgartirildi! 🇺🇿",
+        "lang_button": "🌐 Til / Language",
+        "admin_panel": "⚙️ <b>Admin panel</b>",
+        "stats": "📊 Statistika",
+        "users": "👥 Foydalanuvchilar",
+        "orders": "📦 Buyurtmalar",
+        "sheets": "📊 Google Sheets",
+        "products": "🛍 Mahsulotlar",
+        "broadcast": "📢 Broadcast",
+        "back": "🔙 Orqaga",
+        "cancel": "❌ Bekor qilish",
+        "prod_new": "➕ Yangi mahsulot qo'shish",
+        "sklad_status": "📦 Sklad Qoldig'i",
+        "add_stock": "➕ Skladga qo'shish",
+        "enter_stock_qty": "Qancha miqdorda mahsulot qo'shmoqchisiz (faqat raqam)?",
+        "stock_added": "Muvaffaqiyatli qo'shildi! Yangi qoldiq: {}",
+        "invalid_number": "Faqat musbat raqam kiriting!",
+        "stats_text": "📊 <b>Bot statistikasi</b>\n\n👥 Foydalanuvchilar: <b>{}</b>\n🛍 Mahsulotlar: <b>{}</b> ta\n📦 Buyurtmalar: <b>{}</b>\n💰 Tushumlar: <b>{:,} so'm</b>\n📢 Broadcastlar: <b>{}</b>",
+        "users_header": "👥 <b>So'nggi 30 ({:.0f} jami):</b>\n\n",
+        "orders_header": "📦 <b>Oxirgi {} buyurtma:</b>\n\n",
+        "order_confirmed": "✅ Tasdiqlandi",
+        "order_cancelled": "❌ Bekor qilindi",
+        "order_pending": "⏳ Kutmoqda",
+        "confirm_btn": "✅ Tasdiqlash",
+        "cancel_btn": "❌ Bekor",
+        "webapp_btn": "🚀 WebApp ochish",
+        "edit_btn": "✏️ Tahrirlash",
+        "del_btn": "🗑 O'chirish",
+        "enable_btn": "🟢 Yoqish",
+        "disable_btn": "🔴 O'chirish",
+        "confirm_del_prompt": "⚠️ O'chirishni tasdiqlaysizmi?",
+        "field_edit_prompt": "✏️ Qaysi maydonni tahrirlaysiz?",
+        "enter_new_val": "✏️ Yangi {} kiriting:",
+        "success_update": "✅ Yangilandi!\n\n📦 <b>{}</b> — {:,} so'm",
+        "bc_prompt": "✍️ Xabar matnini yozing:",
+        "bc_preview": "📋 Ko'rinish:\n\n{}\n\nYuborilsinmi?",
+        "bc_sending": "📤 Yuborilmoqda... {}/{}",
+        "bc_success": "✅ <b>Yuborildi!</b>\n\n✅ {}  |  ❌ {}",
+        "sheets_syncing": "⏳ Google Sheets yangilanmoqda...",
+        "sheets_success": "✅ Google Sheets muvaffaqiyatli yangilandi!\n🔗 Havola: {}",
+        "sheets_error": "❌ Google Sheets yangilashda xatolik yuz berdi: {}",
+        "initial_stock_prompt": "Yangi mahsulot boshlang'ich qoldig'ini kiriting (dona, faqat raqam):",
+    },
+    "zh": {
+        "greeting_new": "👋 欢迎",
+        "greeting_returning": "👋 欢迎回来",
+        "order_button": "🌐 开始订购",
+        "order_btn_prompt": "🛒 点击下方按钮进行订购 👇",
+        "select_lang_prompt": "🇺🇿 Iltimos, tilni tanlang:\n🇨🇳 请选择语言:",
+        "lang_changed": "语言修改成功！ 🇨🇳",
+        "lang_button": "🌐 语言 / Language",
+        "admin_panel": "⚙️ <b>管理面板</b>",
+        "stats": "📊 统计数据",
+        "users": "👥 用户列表",
+        "orders": "📦 订单列表",
+        "sheets": "📊 谷歌表格",
+        "products": "🛍 产品列表",
+        "broadcast": "📢 广播消息",
+        "back": "🔙 返回",
+        "cancel": "❌ 取消",
+        "prod_new": "➕ 添加新产品",
+        "sklad_status": "📦 库存余额",
+        "add_stock": "➕ 添加库存",
+        "enter_stock_qty": "您想添加多少数量（仅限数字）？",
+        "stock_added": "添加成功！新库存: {}",
+        "invalid_number": "请输入一个正整数！",
+        "stats_text": "📊 <b>机器人统计</b>\n\n👥 用户数: <b>{}</b>\n🛍 产品数: <b>{}</b> 个\n📦 订单数: <b>{}</b>\n💰 总收入: <b>{:,} 苏姆</b>\n📢 广播次数: <b>{}</b>",
+        "users_header": "👥 <b>最近30名（共 {:.0f}名）:</b>\n\n",
+        "orders_header": "📦 <b>最近 {} 个订单:</b>\n\n",
+        "order_confirmed": "✅ 已确认",
+        "order_cancelled": "❌ 已取消",
+        "order_pending": "⏳ 等待中",
+        "confirm_btn": "✅ 确认",
+        "cancel_btn": "❌ 取消",
+        "webapp_btn": "🚀 打开网页应用",
+        "edit_btn": "✏️ 编辑",
+        "del_btn": "🗑 删除",
+        "enable_btn": "🟢 启用",
+        "disable_btn": "🔴 禁用",
+        "confirm_del_prompt": "⚠️ 您确定要删除吗？",
+        "field_edit_prompt": "✏️ 您想编辑哪个字段？",
+        "enter_new_val": "✏️ 请输入新的{}:",
+        "success_update": "✅ 已更新！\n\n📦 <b>{}</b> — {:,} 苏姆",
+        "bc_prompt": "✍️ 请输入广播内容:",
+        "bc_preview": "📋 预览:\n\n{}\n\n是否发送？",
+        "bc_sending": "📤 发送中... {}/{}",
+        "bc_success": "✅ <b>已发送！</b>\n\n✅ 成功 {}  |  ❌ 失败 {}",
+        "sheets_syncing": "⏳ 正在更新谷歌表格...",
+        "sheets_success": "✅ 谷歌表格更新成功！\n🔗 链接: {}",
+        "sheets_error": "❌ 更新谷歌表格出错: {}",
+        "initial_stock_prompt": "请输入新产品初始库存数量（仅限数字）:",
+    }
+}
+
+def get_text(key: str, lang: str = "uz", *args) -> str:
+    # default to uz if language is not set or invalid
+    if not lang or lang not in TEXTS:
+        lang = "uz"
+    text = TEXTS[lang].get(key, TEXTS["uz"].get(key, key))
+    if args:
+        try:
+            return text.format(*args)
+        except Exception:
+            pass
+    return text

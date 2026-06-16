@@ -8,16 +8,24 @@ class Settings(BaseSettings):
     bot_token:       str
     bot_username:    str   = "@Shohrux_test_bot"
     admin_ids:       str   = "8302385031"
+    sklad_ids:       str   = ""
     webapp_url:      str   = "https://shohrux-production.up.railway.app/webapp"
     admin_password:  str   = "admin123"
     database_url:    str   = "sqlite+aiosqlite:///./data/bot.db"
     channel_id:      int   = 0
     channel_username:str   = ""
     log_level:       str   = "INFO"
+    google_service_account_json: str = ""
+    google_service_account_file: str = ""
+    google_sheet_id: str = ""
 
     @property
     def admin_list(self) -> List[int]:
         return [int(i.strip()) for i in self.admin_ids.split(",") if i.strip().isdigit()]
+
+    @property
+    def sklad_list(self) -> List[int]:
+        return [int(i.strip()) for i in self.sklad_ids.split(",") if i.strip().isdigit()]
 
     from pydantic import model_validator
 
