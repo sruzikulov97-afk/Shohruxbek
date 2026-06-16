@@ -41,6 +41,9 @@ class Settings(BaseSettings):
 
         # Clean database_url for SQLAlchemy Async engine
         db_url = self.database_url.strip()
+        if not db_url:
+            db_url = "sqlite+aiosqlite:///./data/bot.db"
+        
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif db_url.startswith("postgresql://"):
