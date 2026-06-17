@@ -61,8 +61,10 @@ async def get_product(session: AsyncSession, pid: int) -> Optional[Product]:
 
 async def create_product(session: AsyncSession, name: str, price: float,
                          photo_url: str = None, category: str = "Asosiy",
-                         description: str = "", stock: int = 0, added_by: int = None) -> Product:
-    p = Product(name=name, price=price, photo_url=photo_url, category=category, description=description, stock=stock)
+                         description: str = "", stock: int = 0,
+                         added_by: int = None, is_active: bool = True) -> Product:
+    p = Product(name=name, price=price, photo_url=photo_url, category=category,
+                description=description, stock=stock, is_active=is_active)
     session.add(p); await session.commit(); await session.refresh(p)
     if stock > 0:
         tx = StockTransaction(product_id=p.id, quantity=stock, type="initial", added_by=added_by)

@@ -60,7 +60,7 @@ async def cmd_admin(message: types.Message, state: FSMContext, session: AsyncSes
     if uid in settings.admin_list:
         await message.answer(get_text("admin_panel", lang), reply_markup=bosh_admin_menu_kb(lang), parse_mode="HTML")
     elif uid in settings.sklad_list:
-        await message.answer(get_text("admin_panel", lang), reply_markup=sklad_menu_kb(lang), parse_mode="HTML")
+        await message.answer(get_text("sklad_panel_welcome", lang), reply_markup=sklad_menu_kb(lang), parse_mode="HTML")
 
 
 @router.message(F.text.in_(["🔙 Orqaga", "🔙 返回"]))
@@ -87,6 +87,66 @@ async def export_sheets(message: types.Message, session: AsyncSession):
     except Exception as e:
         logger.error(f"Manual sheets sync error: {e}")
         await message.answer(get_text("sheets_error", lang, str(e)))
+
+
+# ── Sklad: Mahsulot qo'shish (Sklad faqat shu tugmani ko'radi) ───────────────
+
+@router.message(F.text.in_(["➕ Mahsulot qo'shish", "➕ 添加产品"]))
+async def sklad_add_product_btn(message: types.Message, state: FSMContext, session: AsyncSession):
+    """Sklad admin faqat yangi mahsulot qo'sha oladi (nofaol holda saqlanadi)."""
+    lang = await get_user_lang_by_id(session, message.from_user.id)
+    await state.set_state(ProductAdd.name)
+    await message.answer(
+        f"➕ <b>{get_text('prod_new', lang)}</b>\n\n1/6 — Nomini kiriting:",
+        parse_mode="HTML", reply_markup=cancel_kb(lang)
+    )
+
+
+# ── Bosh Admin: Sotuvga chiqarish (kutayotgan mahsulotlar) ───────────────────
+
+@router.message(F.text.in_(["📢 Sotuvga chiqarish", "📢 上架销售"]), IsBoshAdmin())
+async def pending_products_list(message: types.Message, session: AsyncSession):
+    """Bosh admin skladchi qo'shgan (nofaol) mahsulotlarni ko'radi va sotuvga chiqaradi."""
+    lang = await get_user_lang_by_id(session, message.from_user.id)
+    prods = await get_all_products(session)
+    pending = [p for p in prods if not p.is_active]
+    if not pending:
+        await message.answer(get_text("no_pending", lang), parse_mode="HTML")
+        return
+    b = InlineKeyboardBuilder()
+    for p in pending:
+        b.button(
+            text=f"📦 {p.name} — {int(p.price):,} so'm | Sklad: {p.stock or 0} ta",
+            callback_data=f"prod_publish:{p.id}"
+        )
+    b.adjust(1)
+    await message.answer(
+        f"🕐 <b>{get_text('pending_products', lang)} ({len(pending)} ta):</b>\n\n"
+        f"Sotuvga chiqarish uchun mahsulotni tanlang:",
+        reply_markup=b.as_markup(), parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data.startswith("prod_publish:"))
+async def prod_publish(callback: types.CallbackQuery, session: AsyncSession):
+    """Mahsulotni faollashtirish (sotuvga chiqarish)."""
+    lang = await get_user_lang_by_id(session, callback.from_user.id)
+    pid = int(callback.data.split(":")[1])
+    p = await get_product(session, pid)
+    if not p:
+        await callback.answer("Topilmadi"); return
+    p.is_active = True
+    await session.commit()
+    # Sync Sheets in background
+    try:
+        from utils.sheets import sync_to_sheets
+        asyncio.create_task(sync_to_sheets())
+    except Exception as e:
+        logger.error(f"Sheets sync error: {e}")
+    await callback.message.edit_text(
+        get_text("published_ok", lang, p.name), parse_mode="HTML"
+    )
+    await callback.answer("✅ Sotuvga chiqarildi!")
 
 
 # ── Statistika ───────────────────────────────────────────────────────────────
@@ -156,22 +216,7 @@ async def orders_list(message: types.Message, session: AsyncSession):
     await message.answer(text[:4096], parse_mode="HTML")
 
 
-# ── Sklad Qoldig'i (Warehouse status) ─────────────────────────────────────────
-
-@router.message(F.text.in_(["📦 Sklad Qoldig'i", "📦 库存余额"]))
-async def sklad_status(message: types.Message, session: AsyncSession):
-    lang = await get_user_lang_by_id(session, message.from_user.id)
-    prods = await get_all_products(session)
-    text = f"📦 <b>{get_text('sklad_status', lang)}:</b>\n\n"
-    for p in prods:
-        status = "🟢" if p.is_active else "🔴"
-        text += f"{status} {p.name}: <b>{p.stock or 0}</b> dona\n"
-    await message.answer(text, parse_mode="HTML")
-
-
-# ── Mahsulotlar ──────────────────────────────────────────────────────────────
-
-@router.message(F.text.in_(["🛍 Mahsulotlar", "🛍 产品列表"]))
+@router.message(F.text.in_(["🛍 Mahsulotlar", "🛍 产品列表"]), IsBoshAdmin())
 async def products_admin(message: types.Message, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
     prods = await get_all_products(session)
@@ -195,10 +240,11 @@ async def products_admin(message: types.Message, session: AsyncSession):
 @router.callback_query(F.data.startswith("padmin:"))
 async def product_detail(callback: types.CallbackQuery, session: AsyncSession):
     lang = await get_user_lang_by_id(session, callback.from_user.id)
+    is_bosh_admin = callback.from_user.id in settings.admin_list
     pid = int(callback.data.split(":")[1])
     p = await get_product(session, pid)
     if not p: await callback.answer("Topilmadi"); return
-    status = "🟢 Faol" if p.is_active else "🔴 Nofaol"
+    status = "🟢 Faol (Sotuvda)" if p.is_active else "🔴 Nofaol (Kutayotgan)"
     text = (
         f"📦 <b>{p.name}</b>\n\n"
         f"📝 {p.description or '—'}\n"
@@ -208,7 +254,7 @@ async def product_detail(callback: types.CallbackQuery, session: AsyncSession):
         f"📦 Sklad qoldig'i: <b>{p.stock or 0}</b> dona\n"
         f"🖼 {'Rasm bor' if p.photo_url else 'Rasm yo\'q'}"
     )
-    kb = product_manage_kb(p.id, p.is_active, lang)
+    kb = product_manage_kb(p.id, p.is_active, lang, is_bosh_admin=is_bosh_admin)
     if p.photo_url:
         try:
             await callback.message.answer_photo(p.photo_url, caption=text, parse_mode="HTML", reply_markup=kb)
@@ -310,7 +356,8 @@ async def prod_desc(message: types.Message, state: FSMContext, session: AsyncSes
 @router.message(ProductAdd.stock)
 async def prod_stock_finish(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+    is_bosh = message.from_user.id in settings.admin_list
+    menu_kb = bosh_admin_menu_kb(lang) if is_bosh else sklad_menu_kb(lang)
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
     try:
@@ -319,12 +366,15 @@ async def prod_stock_finish(message: types.Message, state: FSMContext, session: 
         await message.answer(get_text("invalid_number", lang)); return
 
     data = await state.get_data()
+    # Agar sklad admin qo'shsa — mahsulot nofaol holda (is_active=False) saqlanadi
+    # Bosh admin qo'shsa — faol holda saqlanadi
     p = await create_product(
         session,
         name=data["name"], price=data["price"],
         photo_url=data.get("photo_url"),
         category=data["category"], description=data["description"],
-        stock=stock, added_by=message.from_user.id
+        stock=stock, added_by=message.from_user.id,
+        is_active=is_bosh  # Bosh admin: True, Sklad: False
     )
     await state.clear()
     
@@ -335,12 +385,15 @@ async def prod_stock_finish(message: types.Message, state: FSMContext, session: 
     except Exception as e:
         logger.error(f"Sheets sync error: {e}")
 
+    # Bosh adminga xabar: faol, Skladdagi: nofaol (kutayotgan)
+    status_note = "🟢 Sotuvda" if is_bosh else "🔴 Kutayotgan (Bosh Admin sotuvga chiqaradi)"
     text = (
         f"✅ <b>{get_text('prod_new', lang)}</b>\n\n"
         f"📦 <b>{p.name}</b>\n"
         f"💰 {int(p.price):,} so'm\n"
         f"🗂 {p.category}\n"
         f"📦 Sklad: <b>{p.stock}</b> dona\n"
+        f"📌 {status_note}\n"
         f"🖼 {'Rasm bor ✅' if p.photo_url else 'Rasmsiz'}"
     )
     if p.photo_url:

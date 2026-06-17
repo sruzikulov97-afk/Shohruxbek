@@ -23,10 +23,11 @@ def bosh_admin_menu_kb(lang: str = "uz"):
     kb.button(text=get_text("users", lang))
     kb.button(text=get_text("orders", lang))
     kb.button(text=get_text("products", lang))
+    kb.button(text=get_text("publish_product", lang))
     kb.button(text=get_text("sheets", lang))
     kb.button(text=get_text("broadcast", lang))
     kb.button(text=get_text("back", lang))
-    kb.adjust(2, 2, 2, 1)
+    kb.adjust(2, 2, 2, 1, 1)
     return kb.as_markup(resize_keyboard=True)
 
 def admin_menu_kb(lang: str = "uz"):
@@ -35,10 +36,9 @@ def admin_menu_kb(lang: str = "uz"):
 
 def sklad_menu_kb(lang: str = "uz"):
     kb = ReplyKeyboardBuilder()
-    kb.button(text=get_text("products", lang))
-    kb.button(text=get_text("sklad_status", lang))
+    kb.button(text=get_text("sklad_add_product", lang))
     kb.button(text=get_text("back", lang))
-    kb.adjust(2, 1)
+    kb.adjust(1)
     return kb.as_markup(resize_keyboard=True)
 
 def cancel_kb(lang: str = "uz"):
@@ -67,12 +67,15 @@ def products_inline_kb(products, lang: str = "uz"):
     b.adjust(1)
     return b.as_markup()
 
-def product_manage_kb(product_id: int, is_active: bool, lang: str = "uz"):
+def product_manage_kb(product_id: int, is_active: bool, lang: str = "uz", is_bosh_admin: bool = True):
     b = InlineKeyboardBuilder()
     b.button(text=get_text("edit_btn", lang),  callback_data=f"prod_edit:{product_id}")
     b.button(text=get_text("add_stock", lang), callback_data=f"prod_addstock:{product_id}")
-    b.button(text=get_text("del_btn", lang),   callback_data=f"prod_del:{product_id}")
-    b.button(text=(get_text("enable_btn", lang) if not is_active else get_text("disable_btn", lang)),
-             callback_data=f"prod_toggle:{product_id}")
-    b.adjust(2, 2)
+    if is_bosh_admin:
+        b.button(text=get_text("del_btn", lang),   callback_data=f"prod_del:{product_id}")
+        b.button(text=(get_text("enable_btn", lang) if not is_active else get_text("disable_btn", lang)),
+                 callback_data=f"prod_toggle:{product_id}")
+        b.adjust(2, 2)
+    else:
+        b.adjust(2)
     return b.as_markup()
