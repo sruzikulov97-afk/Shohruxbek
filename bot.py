@@ -40,6 +40,44 @@ async def on_startup():
     await init_db()
     me = await bot.get_me()
     logger.info(f"✅ Bot ishga tushdi: @{me.username}")
+
+    # ── Har bir rol uchun alohida buyruqlar ro'yxatini o'rnatish ──
+    from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeChat
+
+    # Barcha foydalanuvchilar uchun default buyruqlar
+    await bot.set_my_commands(
+        [BotCommand(command="start", description="🏠 Botni boshlash / Buyurtma berish")],
+        scope=BotCommandScopeDefault(),
+    )
+
+    # Bosh Admin uchun alohida buyruqlar (har bir admin ID uchun)
+    for aid in settings.admin_list:
+        try:
+            await bot.set_my_commands(
+                [
+                    BotCommand(command="start",  description="🏠 Asosiy menyu"),
+                    BotCommand(command="admin",  description="⚙️ Bosh Admin paneli"),
+                    BotCommand(command="ban",    description="🚫 Foydalanuvchini bloklash"),
+                    BotCommand(command="unban",  description="✅ Blokdan chiqarish"),
+                ],
+                scope=BotCommandScopeChat(chat_id=aid),
+            )
+        except Exception:
+            pass
+
+    # Sklad Admin uchun alohida buyruqlar (har bir sklad ID uchun)
+    for sid in settings.sklad_list:
+        try:
+            await bot.set_my_commands(
+                [
+                    BotCommand(command="start", description="🏠 Asosiy menyu"),
+                    BotCommand(command="sklad", description="📦 Sklad paneli"),
+                ],
+                scope=BotCommandScopeChat(chat_id=sid),
+            )
+        except Exception:
+            pass
+
     for aid in settings.admin_list:
         try: await bot.send_message(aid, f"✅ <b>Bot ishga tushdi!</b> @{me.username}")
         except Exception: pass

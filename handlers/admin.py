@@ -25,6 +25,8 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 router = Router()
+# Note: IsAnyAdmin() filter is applied per-handler, not router-wide,
+# so that callback_query handlers (prod_publish, padmin, etc.) also work for sklad.
 router.message.filter(IsAnyAdmin())
 
 
@@ -50,17 +52,56 @@ class ProductStockAdd(StatesGroup):
     qty = State()
 
 
-# ── /admin ──────────────────────────────────────────────────────────────────
+# ── /admin — Faqat Bosh Admin uchun ───────────────────────────────────────
 
-@router.message(Command("admin"))
+@router.message(Command("admin"), IsBoshAdmin())
 async def cmd_admin(message: types.Message, state: FSMContext, session: AsyncSession):
+    """Faqat Bosh Admin uchun. To'liq boshqaruv paneli."""
     await state.clear()
-    uid = message.from_user.id
-    lang = await get_user_lang_by_id(session, uid)
-    if uid in settings.admin_list:
-        await message.answer(get_text("admin_panel", lang), reply_markup=bosh_admin_menu_kb(lang), parse_mode="HTML")
-    elif uid in settings.sklad_list:
-        await message.answer(get_text("sklad_panel_welcome", lang), reply_markup=sklad_menu_kb(lang), parse_mode="HTML")
+    lang = await get_user_lang_by_id(session, message.from_user.id)
+    text = (
+        f"⚙️ <b>Bosh Admin Paneli</b>\n\n"
+        f"📊 Statistika | 👥 Foydalanuvchilar\n"
+        f"📦 Buyurtmalar | 🛘 Mahsulotlar\n"
+        f"📢 Sotuvga chiqarish | 📊 Google Sheets\n"
+        f"📢 Broadcast"
+    )
+    await message.answer(text, reply_markup=bosh_admin_menu_kb(lang), parse_mode="HTML")
+
+
+@router.message(Command("admin"), IsSklad())
+async def cmd_admin_wrong_role(message: types.Message):
+    """Skladchi /admin buyrug'ini yuborganda xabar."""
+    await message.answer(
+        "❌ Bu buyruq faqat <b>Bosh Admin</b> uchun.\n\n"
+        "📦 Siz Sklad admin sifatida /sklad buyrug'ini ishlating.",
+        parse_mode="HTML"
+    )
+
+
+# ── /sklad — Faqat Skladchi uchun ───────────────────────────────────────
+
+@router.message(Command("sklad"), IsSklad())
+async def cmd_sklad(message: types.Message, state: FSMContext, session: AsyncSession):
+    """Faqat Sklad Admin uchun. Mahsulot qo'shish paneli."""
+    await state.clear()
+    lang = await get_user_lang_by_id(session, message.from_user.id)
+    text = (
+        f"📦 <b>Sklad Paneli</b>\n\n"
+        f"Yangi mahsulot qo'shing.\n"
+        f"Mahsulot qo'shilgach, Bosh Admin uni sotuvga chiqaradi."
+    )
+    await message.answer(text, reply_markup=sklad_menu_kb(lang), parse_mode="HTML")
+
+
+@router.message(Command("sklad"), IsBoshAdmin())
+async def cmd_sklad_wrong_role(message: types.Message, state: FSMContext, session: AsyncSession):
+    """Bosh Admin /sklad buyrug'ini yuborganda xabar."""
+    await message.answer(
+        "ℹ️ Siz Bosh Admin sifatida /admin buyrug'ini ishlating.\n\n"
+        "📦 /sklad faqat Sklad xodimlari uchun.",
+        parse_mode="HTML"
+    )
 
 
 @router.message(F.text.in_(["🔙 Orqaga", "🔙 返回"]))
