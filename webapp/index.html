@@ -466,7 +466,7 @@ const PAY_INFO = {
 
 // ── PRODUCTS ───────────────────────────────────────────────────────────────
 function loadProducts(){
-  const apiUrl = window.location.origin + '/api/products';
+  const apiUrl = window.location.origin + '/api/products?active_only=true';
   document.getElementById('productGrid').innerHTML =
     `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">${t('loading')}</div>`;
   fetch(apiUrl)
