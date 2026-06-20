@@ -3,7 +3,15 @@ handlers/user.py
 """
 import json, logging
 from aiogram import Router, types, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
+
+@router.message(Command("id"))
+async def cmd_get_id(message: types.Message):
+    """Guruh yoki shaxsiy chat ID raqamini olish uchun yordamchi buyruq."""
+    await message.answer(
+        f"🆔 Ushbu chat ID raqami: <code>{message.chat.id}</code>",
+        parse_mode="HTML"
+    )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
