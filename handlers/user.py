@@ -5,13 +5,6 @@ import json, logging
 from aiogram import Router, types, F
 from aiogram.filters import CommandStart, Command
 
-@router.message(Command("id"))
-async def cmd_get_id(message: types.Message):
-    """Guruh yoki shaxsiy chat ID raqamini olish uchun yordamchi buyruq."""
-    await message.answer(
-        f"🆔 Ushbu chat ID raqami: <code>{message.chat.id}</code>",
-        parse_mode="HTML"
-    )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -23,6 +16,14 @@ from utils.localization import get_text
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+@router.message(Command("id"))
+async def cmd_get_id(message: types.Message):
+    """Guruh yoki shaxsiy chat ID raqamini olish uchun yordamchi buyruq."""
+    await message.answer(
+        f"🆔 Ushbu chat ID raqami: <code>{message.chat.id}</code>",
+        parse_mode="HTML"
+    )
 
 async def get_user_lang_by_id(session: AsyncSession, telegram_id: int) -> str:
     r = await session.execute(select(User.language_code).where(User.telegram_id == telegram_id))
