@@ -491,15 +491,18 @@ function renderProducts(list){
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px">📭 ${t('no_products')}</div>`;
     return;
   }
-  grid.innerHTML = list.map(p=>`
+  grid.innerHTML = list.map(p => {
+    const src = p.photo_url ? (p.photo_url.startsWith('http') ? p.photo_url : `/api/photo/${p.photo_url}`) : '';
+    return `
     <div class="pc" id="pc${p.id}">
-      ${p.photo_url ? `<img class="pc-img" src="${p.photo_url}" onerror="this.style.display='none'"/>` : `<span class="pc-em">📦</span>`}
+      ${src ? `<img class="pc-img" src="${src}" onerror="this.style.display='none'"/>` : `<span class="pc-em">📦</span>`}
       <div class="pc-name">${p.name}</div>
       <div class="pc-price">${Number(p.price).toLocaleString('uz-UZ')} ${t('som')}</div>
       <div class="pc-cat">${p.category||''}</div>
       <span class="pc-cnt" id="cnt${p.id}">0</span>
       <button class="pc-add" onclick="addCart(${p.id})">+</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function addCart(id){

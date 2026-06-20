@@ -613,11 +613,13 @@ function filterProducts(){
     const m = p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q);
     return m && (f==='all' || (f==='active'&&p.is_active) || (f==='inactive'&&!p.is_active));
   });
-  document.getElementById('pGrid').innerHTML = list.map(p=>`
+  document.getElementById('pGrid').innerHTML = list.map(p=>{
+    const src = p.photo_url ? (p.photo_url.startsWith('http') ? p.photo_url : `/api/photo/${p.photo_url}`) : '';
+    return `
     <div class="pcard ${p.is_active?'':'inactive'}">
       <div class="pc-status ${p.is_active?'':'off'}"></div>
-      ${p.photo_url
-        ? `<img class="pc-img" src="${p.photo_url}" onerror="this.style.display='none'"/>`
+      ${src
+        ? `<img class="pc-img" src="${src}" onerror="this.style.display='none'"/>`
         : `<div style="font-size:36px;margin-bottom:10px">📦</div>`}
       <div class="pc-name">${p.name}</div>
       <div class="pc-desc">${p.description||'—'}</div>
@@ -629,7 +631,8 @@ function filterProducts(){
         <button class="btn ${p.is_active?'btn-ghost':'btn-grn'} btn-s" onclick="toggleProd(${p.id})">${p.is_active?'🔴 Off':'🟢 On'}</button>
       </div>
       <div class="pc-id">ID: ${p.id}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   if(!list.length) document.getElementById('pGrid').innerHTML=
     '<div style="color:var(--mu);grid-column:1/-1;text-align:center;padding:30px">📭 Mahsulotlar topilmadi</div>';
 }

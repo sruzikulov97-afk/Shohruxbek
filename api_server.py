@@ -91,6 +91,36 @@ async def api_get_products(request):
         ]
     return json_response(data)
 
+async def api_get_photo(request):
+    file_id = request.match_info["file_id"]
+    from aiogram import Bot
+    import aiohttp
+    try:
+        bot = Bot(token=settings.bot_token)
+        file_info = await bot.get_file(file_id)
+        file_path = file_info.file_path
+        await bot.session.close()
+        
+        telegram_file_url = f"https://api.telegram.org/file/bot{settings.bot_token}/{file_path}"
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(telegram_file_url) as resp:
+                if resp.status == 200:
+                    image_data = await resp.read()
+                    content_type = resp.headers.get("Content-Type", "image/jpeg")
+                    return web.Response(
+                        body=image_data,
+                        content_type=content_type,
+                        headers={
+                            "Cache-Control": "public, max-age=604800, immutable",
+                            "Access-Control-Allow-Origin": "*",
+                        }
+                    )
+                else:
+                    return web.Response(text="Failed to fetch image from Telegram", status=resp.status)
+    except Exception as e:
+        return web.Response(text=str(e), status=500)
+
 async def api_create_product(request):
     try:
         body = await request.json()
@@ -325,6 +355,7 @@ def create_app():
 
     # Products
     app.router.add_get("/api/products", api_get_products)
+    app.router.add_get("/api/photo/{file_id}", api_get_photo)
     app.router.add_post("/api/products", api_create_product)
     app.router.add_put("/api/products/{id}", api_update_product)
     app.router.add_delete("/api/products/{id}", api_delete_product)
