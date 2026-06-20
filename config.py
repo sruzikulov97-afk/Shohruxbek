@@ -32,6 +32,19 @@ class Settings(BaseSettings):
 
     @model_validator(mode='after')
     def clean_settings(self) -> 'Settings':
+        # Strip literal quotes from string settings
+        self.bot_token = self.bot_token.strip().strip("'").strip('"')
+        self.bot_username = self.bot_username.strip().strip("'").strip('"')
+        self.admin_ids = self.admin_ids.strip().strip("'").strip('"')
+        self.sklad_ids = self.sklad_ids.strip().strip("'").strip('"')
+        self.webapp_url = self.webapp_url.strip().strip("'").strip('"')
+        self.admin_password = self.admin_password.strip().strip("'").strip('"')
+        self.database_url = self.database_url.strip().strip("'").strip('"')
+        self.google_service_account_json = self.google_service_account_json.strip().strip("'").strip('"')
+        self.google_service_account_file = self.google_service_account_file.strip().strip("'").strip('"')
+        self.google_sheet_id = self.google_sheet_id.strip().strip("'").strip('"')
+        self.report_group_id = self.report_group_id.strip().strip("'").strip('"')
+
         # Clean webapp_url
         url = self.webapp_url.strip()
         if not url.startswith("http://") and not url.startswith("https://"):
