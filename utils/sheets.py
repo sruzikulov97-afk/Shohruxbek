@@ -165,6 +165,52 @@ async def sync_to_sheets() -> str:
                 worksheet.update(values=all_data, range_name="A1")
             except Exception:
                 worksheet.update("A1", all_data)
+
+            # Apply cell and column formatting to make the sheet look clean and professional
+            try:
+                # 1. Bold the top info metadata
+                worksheet.format("A1:E2", {
+                    "textFormat": {"bold": True},
+                    "horizontalAlignment": "LEFT"
+                })
+
+                # 2. Format Table Headers (Row 4) with a sleek dark Navy theme
+                worksheet.format("A4:G4", {
+                    "backgroundColor": {
+                        "red": 0.08,
+                        "green": 0.18,
+                        "blue": 0.36
+                    },
+                    "textFormat": {
+                        "bold": True,
+                        "foregroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                        "fontSize": 11
+                    },
+                    "horizontalAlignment": "CENTER",
+                    "verticalAlignment": "MIDDLE"
+                })
+
+                # 3. Format Data Rows (Row 5 onwards)
+                max_row = len(rows) + 4
+                if max_row >= 5:
+                    worksheet.format(f"A5:A{max_row}", {"horizontalAlignment": "CENTER"})
+                    worksheet.format(f"B5:B{max_row}", {"horizontalAlignment": "LEFT"})
+                    worksheet.format(f"C5:F{max_row}", {"horizontalAlignment": "CENTER"})
+                    
+                    # Format revenue column with thousands separator and "so'm" suffix
+                    worksheet.format(f"G5:G{max_row}", {
+                        "horizontalAlignment": "RIGHT",
+                        "numberFormat": {
+                            "type": "NUMBER",
+                            "pattern": "#,##0 \"so'm\""
+                        }
+                    })
+
+                # 4. Auto-resize columns to fit content perfectly
+                worksheet.columns_auto_resize(0, 7)
+            except Exception as fe:
+                logger.warning(f"Non-critical Sheets formatting error: {fe}")
+
             return sheet.url
 
         sheet_url = await loop.run_in_executor(None, update_sheets_worker)
