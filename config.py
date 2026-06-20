@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     google_service_account_json: str = ""
     google_service_account_file: str = ""
     google_sheet_id: str = ""
+    report_group_id: str = ""
 
     @property
     def admin_list(self) -> List[int]:

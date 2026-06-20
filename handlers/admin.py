@@ -58,6 +58,7 @@ class ProductStockAdd(StatesGroup):
 async def cmd_admin(message: types.Message, state: FSMContext, session: AsyncSession):
     """Faqat Bosh Admin uchun. To'liq boshqaruv paneli."""
     await state.clear()
+    await state.update_data(panel="admin")
     lang = await get_user_lang_by_id(session, message.from_user.id)
     text = (
         f"⚙️ <b>Bosh Admin Paneli</b>\n\n"
@@ -85,6 +86,7 @@ async def cmd_admin_wrong_role(message: types.Message):
 async def cmd_sklad(message: types.Message, state: FSMContext, session: AsyncSession):
     """Faqat Sklad Admin uchun. Mahsulot qo'shish paneli."""
     await state.clear()
+    await state.update_data(panel="sklad")
     lang = await get_user_lang_by_id(session, message.from_user.id)
     text = (
         f"📦 <b>Sklad Paneli</b>\n\n"
@@ -136,7 +138,10 @@ async def export_sheets(message: types.Message, session: AsyncSession):
 async def sklad_add_product_btn(message: types.Message, state: FSMContext, session: AsyncSession):
     """Sklad admin faqat yangi mahsulot qo'sha oladi (nofaol holda saqlanadi)."""
     lang = await get_user_lang_by_id(session, message.from_user.id)
+    data = await state.get_data()
+    panel = data.get("panel", "sklad")
     await state.set_state(ProductAdd.name)
+    await state.update_data(source=panel)
     await message.answer(
         f"➕ <b>{get_text('prod_new', lang)}</b>\n\n1/6 — Nomini kiriting:",
         parse_mode="HTML", reply_markup=cancel_kb(lang)
@@ -312,7 +317,10 @@ async def product_detail(callback: types.CallbackQuery, session: AsyncSession):
 @router.callback_query(F.data == "prod_new")
 async def prod_new_start(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, callback.from_user.id)
+    data = await state.get_data()
+    panel = data.get("panel", "admin")
     await state.set_state(ProductAdd.name)
+    await state.update_data(source=panel)
     await callback.message.answer(
         f"➕ <b>{get_text('prod_new', lang)}</b>\n\n1/6 — Nomini kiriting:",
         parse_mode="HTML", reply_markup=cancel_kb(lang)
@@ -323,7 +331,15 @@ async def prod_new_start(callback: types.CallbackQuery, state: FSMContext, sessi
 @router.message(ProductAdd.name)
 async def prod_name(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+    data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+        
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
     await state.update_data(name=message.text)
@@ -334,7 +350,15 @@ async def prod_name(message: types.Message, state: FSMContext, session: AsyncSes
 @router.message(ProductAdd.price)
 async def prod_price(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+    data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
     try:
@@ -344,7 +368,7 @@ async def prod_price(message: types.Message, state: FSMContext, session: AsyncSe
     await state.update_data(price=price)
     await state.set_state(ProductAdd.photo)
     await message.answer(
-        "3/6 — Rasm URL sini yuboring 🖼\n\n"
+        "3/6 — Rasm yuboring (yoki URL kiriting) 🖼\n\n"
         "Rasm yo'q bo'lsa <b>yoq</b> deb yozing.",
         parse_mode="HTML"
     )
@@ -353,18 +377,32 @@ async def prod_price(message: types.Message, state: FSMContext, session: AsyncSe
 @router.message(ProductAdd.photo)
 async def prod_photo(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+    data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
 
     photo_url = None
-    if message.text and message.text.lower() not in ("yoq", "yo'q", "-", "skip", "no"):
-        url = message.text.strip()
-        if url.startswith("http"):
-            photo_url = url
-        else:
-            await message.answer("❗ To'g'ri URL kiriting yoki yoq deb yozing:")
-            return
+    if message.photo:
+        photo_url = message.photo[-1].file_id
+    elif message.text:
+        if message.text.lower() not in ("yoq", "yo'q", "-", "skip", "no"):
+            url = message.text.strip()
+            if url.startswith("http"):
+                photo_url = url
+            else:
+                await message.answer("❗ Rasm yuboring, to'g'ri URL kiriting yoki yoq deb yozing:")
+                return
+    else:
+        await message.answer("❗ Rasm yuboring, to'g'ri URL kiriting yoki yoq deb yozing:")
+        return
 
     await state.update_data(photo_url=photo_url)
     await state.set_state(ProductAdd.category)
@@ -374,7 +412,15 @@ async def prod_photo(message: types.Message, state: FSMContext, session: AsyncSe
 @router.message(ProductAdd.category)
 async def prod_category(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+    data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
     await state.update_data(category=message.text.strip())
@@ -385,7 +431,15 @@ async def prod_category(message: types.Message, state: FSMContext, session: Asyn
 @router.message(ProductAdd.desc)
 async def prod_desc(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+    data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
     desc = "" if message.text.lower() in ("yo'q", "yoq", "-", "no") else message.text
@@ -397,8 +451,18 @@ async def prod_desc(message: types.Message, state: FSMContext, session: AsyncSes
 @router.message(ProductAdd.stock)
 async def prod_stock_finish(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    is_bosh = message.from_user.id in settings.admin_list
-    menu_kb = bosh_admin_menu_kb(lang) if is_bosh else sklad_menu_kb(lang)
+    data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        is_bosh = False
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        is_bosh = True
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        is_bosh = message.from_user.id in settings.admin_list
+        menu_kb = bosh_admin_menu_kb(lang) if is_bosh else sklad_menu_kb(lang)
+
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
     try:
@@ -406,9 +470,6 @@ async def prod_stock_finish(message: types.Message, state: FSMContext, session: 
     except ValueError:
         await message.answer(get_text("invalid_number", lang)); return
 
-    data = await state.get_data()
-    # Agar sklad admin qo'shsa — mahsulot nofaol holda (is_active=False) saqlanadi
-    # Bosh admin qo'shsa — faol holda saqlanadi
     p = await create_product(
         session,
         name=data["name"], price=data["price"],
@@ -452,7 +513,9 @@ async def prod_stock_finish(message: types.Message, state: FSMContext, session: 
 async def add_stock_start(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, callback.from_user.id)
     pid = int(callback.data.split(":")[1])
-    await state.update_data(stock_pid=pid)
+    data = await state.get_data()
+    panel = data.get("panel", "admin" if callback.from_user.id in settings.admin_list else "sklad")
+    await state.update_data(stock_pid=pid, source=panel)
     await state.set_state(ProductStockAdd.qty)
     await callback.message.answer(get_text("enter_stock_qty", lang), reply_markup=cancel_kb(lang))
     await callback.answer()
@@ -461,7 +524,15 @@ async def add_stock_start(callback: types.CallbackQuery, state: FSMContext, sess
 @router.message(ProductStockAdd.qty)
 async def add_stock_finish(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+    data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+
     if message.text in (get_text("cancel", "uz"), get_text("cancel", "zh")):
         await state.clear(); await message.answer("❌", reply_markup=menu_kb); return
     try:
@@ -496,7 +567,9 @@ async def add_stock_finish(message: types.Message, state: FSMContext, session: A
 async def prod_edit_start(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, callback.from_user.id)
     pid = int(callback.data.split(":")[1])
-    await state.update_data(edit_pid=pid)
+    data = await state.get_data()
+    panel = data.get("panel", "admin" if callback.from_user.id in settings.admin_list else "sklad")
+    await state.update_data(edit_pid=pid, source=panel)
     await state.set_state(ProductEdit.field)
     b = InlineKeyboardBuilder()
     for label, key in [("📛 Nom","name"),("💰 Narx","price"),("🖼 Rasm URL","photo_url"),("🗂 Kategoriya","category"),("📝 Tavsif","description"),("📦 Sklad","stock")]:
@@ -526,19 +599,34 @@ async def prod_edit_field(callback: types.CallbackQuery, state: FSMContext, sess
 @router.message(ProductEdit.value)
 async def prod_edit_value(message: types.Message, state: FSMContext, session: AsyncSession):
     lang = await get_user_lang_by_id(session, message.from_user.id)
-    menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
     data = await state.get_data()
+    source = data.get("source")
+    if source == "sklad":
+        menu_kb = sklad_menu_kb(lang)
+    elif source == "admin":
+        menu_kb = bosh_admin_menu_kb(lang)
+    else:
+        menu_kb = bosh_admin_menu_kb(lang) if message.from_user.id in settings.admin_list else sklad_menu_kb(lang)
+
     pid, field = data["edit_pid"], data["edit_field"]
-    value = message.text
-    if field == "price":
-        try: value = float(value.replace(" ","").replace(",","."))
-        except ValueError: await message.answer("❗ Faqat raqam:"); return
-    elif field == "stock":
-        try: value = int(value)
-        except ValueError: await message.answer("❗ Faqat raqam:"); return
-    elif field == "photo_url":
-        if not value.startswith("http"):
-            await message.answer("❗ URL http... bilan boshlanishi kerak:"); return
+    
+    value = None
+    if field == "photo_url" and message.photo:
+        value = message.photo[-1].file_id
+    elif message.text:
+        value = message.text
+        if field == "price":
+            try: value = float(value.replace(" ","").replace(",","."))
+            except ValueError: await message.answer("❗ Faqat raqam:"); return
+        elif field == "stock":
+            try: value = int(value)
+            except ValueError: await message.answer("❗ Faqat raqam:"); return
+        elif field == "photo_url":
+            if not value.startswith("http"):
+                await message.answer("❗ Rasm yuboring yoki http... bilan boshlanuvchi URL yuboring:"); return
+    else:
+        await message.answer("❗ Rasm yuboring yoki matn kiriting:")
+        return
     
     await update_product(session, pid, **{field: value})
     await state.clear()

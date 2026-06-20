@@ -161,11 +161,68 @@ async def sync_to_sheets() -> str:
             ]
 
             all_data = header_info + [table_headers] + rows
-            worksheet.update("A1", all_data)
+            try:
+                worksheet.update(values=all_data, range_name="A1")
+            except Exception:
+                worksheet.update("A1", all_data)
             return sheet.url
 
         sheet_url = await loop.run_in_executor(None, update_sheets_worker)
         logger.info(f"Google Sheets inventory report successfully updated. URL: {sheet_url}")
+
+        # Send report to Group if configured
+        if settings.report_group_id:
+            try:
+                from aiogram import Bot
+                from aiogram.client.default import DefaultBotProperties
+                from aiogram.enums import ParseMode
+
+                # Format product stock list
+                prod_lines = []
+                total_additions = 0
+                total_sales = 0
+                total_balance = 0
+                total_revenue = 0
+
+                for r in rows:
+                    # r: [pid, name, prev_month_stock, this_month_additions, this_month_sales, current_balance, this_month_revenue]
+                    prod_lines.append(f"  • {r[1]}: <b>{r[5]}</b> ta")
+                    total_additions += r[3]
+                    total_sales += r[4]
+                    total_balance += r[5]
+                    total_revenue += r[6]
+
+                prod_lines_text = "\n".join(prod_lines[:25])
+                if len(rows) > 25:
+                    prod_lines_text += "\n  • ..."
+
+                time_str = now_utc8.strftime("%Y-%m-%d %H:%M:%S")
+                month_str = now_utc8.strftime("%B %Y")
+
+                report_msg = (
+                    f"📊 <b>GOOGLE SHEETS HISOBOTI YANGILANDI</b>\n"
+                    f"📅 Davr: <b>{month_str}</b>\n"
+                    f"🕒 Yangilangan vaqt: <code>{time_str} (UTC-8)</code>\n\n"
+                    f"📈 <b>Umumiy statistika:</b>\n"
+                    f"• Mahsulot turlari: {len(products)} ta\n"
+                    f"• Shu oy ishlab chiqarildi: <b>{total_additions}</b> ta\n"
+                    f"• Shu oy sotildi: <b>{total_sales}</b> ta\n"
+                    f"• Sklad joriy qoldig'i: <b>{total_balance}</b> ta\n"
+                    f"• Shu oy jami tushum: <b>{int(total_revenue):,} so'm</b>\n\n"
+                    f"📋 <b>Sklad qoldiqlari:</b>\n{prod_lines_text}\n\n"
+                    f"🔗 Google Sheets havolasi:\n{sheet_url}"
+                )
+
+                temp_bot = Bot(token=settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+                chat_id = settings.report_group_id.strip()
+                if chat_id.replace('-', '').replace('+', '').isdigit():
+                    chat_id = int(chat_id)
+                await temp_bot.send_message(chat_id, report_msg)
+                await temp_bot.session.close()
+                logger.info(f"Report message successfully sent to group {settings.report_group_id}")
+            except Exception as ge:
+                logger.error(f"Failed to send report to group: {ge}")
+
         return sheet_url
 
     except Exception as e:
