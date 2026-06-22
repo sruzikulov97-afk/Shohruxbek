@@ -100,7 +100,12 @@ async def webapp_data(message: types.Message, db_user, session: AsyncSession):
             order_num = order_ids[0] if order_ids else "#—"
 
             # Notify admins in their language
-            pay_icon = "⚡ Click" if payment == "click" else "💜 Payme"
+            if payment == "click":
+                pay_icon = "⚡ Click"
+            elif payment == "cash":
+                pay_icon = "💵 Naqd"
+            else:
+                pay_icon = "💜 Payme"
             items_text = "\n".join(
                 f"  • {i.get('name')} × {i.get('qty')} = {int(i.get('total',0)):,} so'm"
                 for i in items
