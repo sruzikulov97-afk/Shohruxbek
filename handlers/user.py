@@ -30,7 +30,7 @@ async def get_user_lang_by_id(session: AsyncSession, telegram_id: int) -> str:
     row = r.first()
     return row[0] if row and row[0] else "uz"
 
-@router.message(CommandStart())
+@router.message(CommandStart(), F.chat.type == "private")
 async def cmd_start(message: types.Message, db_user, is_new_user: bool, session: AsyncSession):
     if not db_user.language_code or db_user.language_code not in ("uz", "zh"):
         await message.answer(
@@ -56,14 +56,14 @@ async def cb_setlang(callback: types.CallbackQuery, session: AsyncSession):
     await callback.message.delete()
     await callback.answer()
 
-@router.message(lambda m: m.text and any(x in m.text for x in ["Til", "Language", "语言"]))
+@router.message(lambda m: m.text and any(x in m.text for x in ["Til", "Language", "语言"]), F.chat.type == "private")
 async def cmd_change_lang(message: types.Message):
     await message.answer(
         "🇺🇿 Iltimos, tilni tanlang:\n🇨🇳 请选择语言:",
         reply_markup=lang_selection_kb()
     )
 
-@router.message(lambda m: m.web_app_data is not None)
+@router.message(lambda m: m.web_app_data is not None, F.chat.type == "private")
 async def webapp_data(message: types.Message, db_user, session: AsyncSession):
     raw = message.web_app_data.data
     lang = db_user.language_code or "uz"
