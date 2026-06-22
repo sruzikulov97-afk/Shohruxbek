@@ -22,21 +22,21 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-def to_utc8(dt: datetime) -> datetime:
-    """Convert a naive UTC datetime from database to UTC-8 timezone."""
+def to_tashkent(dt: datetime) -> datetime:
+    """Convert a naive UTC datetime from database to Tashkent timezone (UTC+5)."""
     if dt is None:
         return None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone(timedelta(hours=-8)))
+    return dt.astimezone(timezone(timedelta(hours=5)))
 
-def get_utc8_now() -> datetime:
-    """Get the current time in UTC-8 timezone."""
-    return datetime.now(timezone(timedelta(hours=-8)))
+def get_tashkent_now() -> datetime:
+    """Get the current time in Tashkent timezone (UTC+5)."""
+    return datetime.now(timezone(timedelta(hours=5)))
 
 async def sync_to_sheets() -> str:
     """
-    Sync stock level and monthly sales data to Google Sheets in UTC-8 timezone.
+    Sync stock level and monthly sales data to Google Sheets in Tashkent timezone (UTC+5).
     Returns:
         str: The Google Sheets URL if sync succeeded, empty string otherwise.
     """
@@ -52,12 +52,12 @@ async def sync_to_sheets() -> str:
             txs = (await session.execute(select(StockTransaction))).scalars().all()
             orders = (await session.execute(select(Order).where(Order.status == "confirmed"))).scalars().all()
 
-        # 2. Perform UTC-8 calculations
-        now_utc8 = get_utc8_now()
-        current_year = now_utc8.year
-        current_month = now_utc8.month
-        # Start of current month in UTC-8
-        first_day_current_month = datetime(current_year, current_month, 1, 0, 0, 0, tzinfo=timezone(timedelta(hours=-8)))
+        # 2. Perform Tashkent (UTC+5) calculations
+        now_tashkent = get_tashkent_now()
+        current_year = now_tashkent.year
+        current_month = now_tashkent.month
+        # Start of current month in Tashkent
+        first_day_current_month = datetime(current_year, current_month, 1, 0, 0, 0, tzinfo=timezone(timedelta(hours=5)))
 
         rows = []
         for p in products:
@@ -67,12 +67,12 @@ async def sync_to_sheets() -> str:
             # Calculate total additions before current month
             additions_before = sum(
                 t.quantity for t in txs
-                if t.product_id == pid and to_utc8(t.created_at) < first_day_current_month
+                if t.product_id == pid and to_tashkent(t.created_at) < first_day_current_month
             )
             # Calculate total confirmed sales before current month
             sales_before = sum(
                 o.quantity for o in orders
-                if o.product_id == pid and to_utc8(o.created_at) < first_day_current_month
+                if o.product_id == pid and to_tashkent(o.created_at) < first_day_current_month
             )
             # Previous month remaining stock
             prev_month_stock = max(0, additions_before - sales_before)
@@ -80,19 +80,19 @@ async def sync_to_sheets() -> str:
             # This month's stock additions (production)
             this_month_additions = sum(
                 t.quantity for t in txs
-                if t.product_id == pid and to_utc8(t.created_at) >= first_day_current_month
+                if t.product_id == pid and to_tashkent(t.created_at) >= first_day_current_month
             )
 
             # This month's sales quantity
             this_month_sales = sum(
                 o.quantity for o in orders
-                if o.product_id == pid and to_utc8(o.created_at) >= first_day_current_month
+                if o.product_id == pid and to_tashkent(o.created_at) >= first_day_current_month
             )
 
             # This month's sales revenue
             this_month_revenue = sum(
                 o.price for o in orders
-                if o.product_id == pid and to_utc8(o.created_at) >= first_day_current_month
+                if o.product_id == pid and to_tashkent(o.created_at) >= first_day_current_month
             )
 
             current_balance = p.stock or 0
@@ -142,10 +142,10 @@ async def sync_to_sheets() -> str:
             worksheet.clear()
 
             # Set up the report layout
-            time_str = now_utc8.strftime("%Y-%m-%d %H:%M:%S")
-            month_str = now_utc8.strftime("%B %Y")
+            time_str = now_tashkent.strftime("%Y-%m-%d %H:%M:%S")
+            month_str = now_tashkent.strftime("%B %Y")
             header_info = [
-                ["Hisobot davri (Reporting Period):", month_str, "", "Vaqt zonasi (Timezone):", "UTC-8"],
+                ["Hisobot davri (Reporting Period):", month_str, "", "Vaqt zonasi (Timezone):", "UTC+5 (Tashkent)"],
                 ["Yangilangan vaqt (Last Updated):", time_str, "", "", ""],
                 [] # Blank row for spacing
             ]
@@ -241,13 +241,13 @@ async def sync_to_sheets() -> str:
             if len(rows) > 25:
                 prod_lines_text += "\n  • ..."
 
-            time_str = now_utc8.strftime("%Y-%m-%d %H:%M:%S")
-            month_str = now_utc8.strftime("%B %Y")
+            time_str = now_tashkent.strftime("%Y-%m-%d %H:%M:%S")
+            month_str = now_tashkent.strftime("%B %Y")
 
             report_msg = (
                 f"📊 <b>GOOGLE SHEETS HISOBOTI YANGILANDI</b>\n"
                 f"📅 Davr: <b>{month_str}</b>\n"
-                f"🕒 Yangilangan vaqt: <code>{time_str} (UTC-8)</code>\n\n"
+                f"🕒 Yangilangan vaqt: <code>{time_str} (UTC+5)</code>\n\n"
                 f"📈 <b>Umumiy statistika:</b>\n"
                 f"• Mahsulot turlari: {len(products)} ta\n"
                 f"• Shu oy ishlab chiqarildi: <b>{total_additions}</b> ta\n"
