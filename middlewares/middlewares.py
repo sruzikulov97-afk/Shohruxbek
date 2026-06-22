@@ -4,6 +4,10 @@ from aiogram.types import TelegramObject, Message, CallbackQuery
 from config import settings
 from database.models import AsyncSessionLocal
 from database.crud import get_or_create_user
+from sqlalchemy.ext.asyncio import AsyncSession
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DatabaseMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
@@ -12,8 +16,10 @@ class DatabaseMiddleware(BaseMiddleware):
             tg_user = None
             if isinstance(event, Message) and event.from_user:
                 tg_user = event.from_user
+                logger.info(f"📩 MSG RECEIVED: text='{event.text}', chat_id={event.chat.id}, type='{event.chat.type}', from_id={tg_user.id}")
             elif isinstance(event, CallbackQuery) and event.from_user:
                 tg_user = event.from_user
+                logger.info(f"📩 CALLBACK RECEIVED: data='{event.data}', from_id={tg_user.id}")
             if tg_user and not tg_user.is_bot:
                 user, created = await get_or_create_user(session, tg_user)
                 # Sync roles from configuration
