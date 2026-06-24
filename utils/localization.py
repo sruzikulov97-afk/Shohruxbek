@@ -114,7 +114,7 @@ TEXTS = {
         "sheets_syncing": "⏳ 正在更新谷歌表格...",
         "sheets_success": "✅ 谷歌表格更新成功！\n🔗 链接: {}",
         "sheets_error": "❌ 更新谷歌表格出错: {}",
-        "initial_stock_prompt": "请输入新产品初始库存数量（仅限数字）:",
+        "initial_stock_prompt": "请输入新商品的初始库存数量（仅限正整数）：",
     }
 }
 
